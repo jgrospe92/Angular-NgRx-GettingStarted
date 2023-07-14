@@ -9,10 +9,15 @@ const userRoutes: Routes = [
   { path: 'login', component: LoginComponent }
 ];
 
+// NgRx
+import { StoreModule } from '@ngrx/store';
+import { userReducer } from './state/user.reducer';
+
 @NgModule({
   imports: [
     SharedModule,
-    RouterModule.forChild(userRoutes)
+    RouterModule.forChild(userRoutes),
+    StoreModule.forFeature('users', userReducer)
   ],
   declarations: [
     LoginComponent

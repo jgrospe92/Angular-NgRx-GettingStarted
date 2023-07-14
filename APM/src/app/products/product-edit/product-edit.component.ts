@@ -7,25 +7,27 @@ import { Product } from '../product';
 import { ProductService } from '../product.service';
 import { GenericValidator } from '../../shared/generic-validator';
 import { NumberValidators } from '../../shared/number.validator';
+import { State, getCurrentProduct } from '../state/product.reducer';
+import { Store } from '@ngrx/store';
+import * as ProductActions from '../state/product.actions';
 
 @Component({
   selector: 'pm-product-edit',
   templateUrl: './product-edit.component.html'
 })
-export class ProductEditComponent implements OnInit, OnDestroy {
+export class ProductEditComponent implements OnInit {
   pageTitle = 'Product Edit';
   errorMessage = '';
   productForm: FormGroup;
 
   product: Product | null;
-  sub: Subscription;
 
   // Use with the generic validation message class
   displayMessage: { [key: string]: string } = {};
   private validationMessages: { [key: string]: { [key: string]: string } };
   private genericValidator: GenericValidator;
 
-  constructor(private fb: FormBuilder, private productService: ProductService) {
+  constructor(private store: Store<State>, private fb: FormBuilder, private productService: ProductService) {
 
     // Defines all of the validation messages for the form.
     // These could instead be retrieved from a file or database.
@@ -58,7 +60,8 @@ export class ProductEditComponent implements OnInit, OnDestroy {
     });
 
     // Watch for changes to the currently selected product
-    this.sub = this.productService.selectedProductChanges$.subscribe(
+    // TODO : unsubscribe
+    this.store.select(getCurrentProduct).subscribe(
       currentProduct => this.displayProduct(currentProduct)
     );
 
@@ -68,9 +71,6 @@ export class ProductEditComponent implements OnInit, OnDestroy {
     );
   }
 
-  ngOnDestroy(): void {
-    this.sub.unsubscribe();
-  }
 
   // Also validate on blur
   // Helpful if the user tabs through required fields
@@ -113,13 +113,13 @@ export class ProductEditComponent implements OnInit, OnDestroy {
     if (product && product.id) {
       if (confirm(`Really delete the product: ${product.productName}?`)) {
         this.productService.deleteProduct(product.id).subscribe({
-          next: () => this.productService.changeSelectedProduct(null),
+          next: () => this.store.dispatch(ProductActions.clearCurrentProduct()),
           error: err => this.errorMessage = err
         });
       }
     } else {
       // No need to delete, it was never saved
-      this.productService.changeSelectedProduct(null);
+
     }
   }
 
